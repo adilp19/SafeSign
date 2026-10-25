@@ -221,9 +221,12 @@ export default function Results({ result, docText, mode, onReset }) {
 // how it's divided is up to the roommates, so this assumes an even split.
 function SplitCard({ result, totals }) {
   const [people, setPeople] = useState(result.tenantCount || 1);
+  const [typedRent, setTypedRent] = useState('');
   if (result.documentType !== 'lease') return null;
 
-  const rent = rentAmount(result.keyTerms);
+  const leaseRent = rentAmount(result.keyTerms);
+  // If the lease leaves rent blank, let the person enter the amount they were quoted.
+  const rent = leaseRent || Number(typedRent.replace(/[^0-9.]/g, '')) || 0;
   const depositTerm = result.keyTerms.find((k) => /deposit/i.test(k.label));
   const deposit = depositTerm ? Number(String(depositTerm.value).replace(/[^0-9.]/g, '')) || 0 : 0;
   const per = (n) => money(Math.round((n / people) * 100) / 100);
@@ -257,8 +260,30 @@ function SplitCard({ result, totals }) {
         </div>
       </div>
 
+      {!leaseRent && (
+        <label className="mt-3 block text-sm">
+          <span className="text-muted">Rent is blank in the lease. Enter the total you were quoted:</span>
+          <div className="mt-1 flex items-center gap-2">
+            <span className="font-semibold">$</span>
+            <input
+              inputMode="decimal"
+              value={typedRent}
+              onChange={(e) => setTypedRent(e.target.value)}
+              placeholder="8,000"
+              className="w-40 rounded-lg border border-line bg-paper px-3 py-2 outline-none focus:border-accent"
+            />
+            <span className="text-muted">/ month</span>
+          </div>
+          {rent > 0 && (
+            <span className="mt-1 block text-xs text-risk-red">
+              Make sure this amount is written into the lease before you sign.
+            </span>
+          )}
+        </label>
+      )}
+
       {rows.length === 0 ? (
-        <p className="mt-2 text-sm text-muted">The rent amount is left blank, so there's nothing to split yet.</p>
+        <p className="mt-2 text-sm text-muted">Enter the rent above to see each person's share.</p>
       ) : (
         <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {rows.map(([label, value]) => (
