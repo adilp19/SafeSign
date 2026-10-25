@@ -1,5 +1,5 @@
 // Vercel serverless function for "Cloud demo" mode.
-// Calls open-weight Llama on Groq. The API key lives in Vercel env vars, never in the browser.
+// Calls an open-weight model on Groq (default: gpt-oss-120b; override with GROQ_MODEL). The API key lives in Vercel env vars, never in the browser.
 // Nothing is stored: the request is forwarded and the answer returned.
 
 export default async function handler(req, res) {
@@ -15,18 +15,26 @@ export default async function handler(req, res) {
   const size = JSON.stringify(messages).length;
   if (size > 60000) return res.status(413).json({ error: 'Document is too long for cloud mode.' });
 
+  const model = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
+  const isReasoning = model.startsWith('openai/gpt-oss');
+
   try {
     const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
+        model,
         messages,
         temperature: 0.2,
+        // gpt-oss "thinks" before answering; keep it short to stay under free-tier token limits.
+        ...(isReasoning ? { reasoning_effort: 'low' } : {}),
         ...(json ? { response_format: { type: 'json_object' } } : {}),
       }),
     });
     const data = await r.json();
+    if (r.status === 429) {
+      return res.status(429).json({ error: 'The free cloud demo is busy. Wait about a minute and try again.' });
+    }
     if (!r.ok) return res.status(r.status).json({ error: data.error?.message || 'Groq request failed' });
     return res.status(200).json({ content: data.choices?.[0]?.message?.content ?? '' });
   } catch (e) {
