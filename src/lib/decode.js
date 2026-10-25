@@ -45,10 +45,15 @@ function normalize(raw) {
   return {
     documentType: str(raw.documentType, 'other'),
     title: str(raw.title, 'Your document'),
-    summary: str(raw.summary),
+    summary: str(raw.summary).replace(/\$?_{3,}/g, '[left blank]'),
     keyTerms: arr(raw.keyTerms)
       .filter((k) => k && k.label && k.value)
-      .map((k) => ({ label: str(k.label), value: String(k.value) })),
+      .map((k) => ({
+        label: str(k.label),
+        // Blank template lines ("$_____") become an explicit warning.
+        value: /_{3,}/.test(String(k.value)) ? 'Left blank' : String(k.value),
+      })),
+    tenantCount: Number.isInteger(raw.tenantCount) && raw.tenantCount > 0 ? raw.tenantCount : null,
     clauses: arr(raw.clauses)
       .filter((c) => c && (c.title || c.explanation))
       .map((c) => ({
@@ -74,6 +79,7 @@ function normalize(raw) {
 // run after the model and only ever make results MORE cautious, never less.
 
 const RED_RULES = [
+  { re: /jointly and severally|joint and several/i, why: 'each roommate can owe the full rent' },
   { re: /automatic(ally)?\s+renew/i, why: 'auto-renewal' },
   { re: /regardless of (the )?condition/i, why: 'deposit kept no matter what' },
   { re: /repairs? under \$|responsible for (all )?(the )?repairs|pay for (all )?repairs/i, why: 'tenant pays repairs' },
@@ -178,7 +184,40 @@ export async function decodeDocument(text, mode, onProgress = () => {}) {
     parts.push(normalize(raw));
   }
   onProgress('Adding up the fees…');
-  return merge(parts);
+  const result = merge(parts);
+  result.tenantCount = parts.map((p) => p.tenantCount).find(Boolean) || null;
+
+  // Drop any fee whose amount isn't actually written in the document (model hallucinations).
+  // Early-termination fees are exempt because they're computed (N months x rent).
+  result.fees = result.fees.filter(
+    (f) => /terminat|break/i.test(`${f.name} ${f.note}`) || amountAppearsIn(text, f.amount)
+  );
+
+  // Count only blank amounts and dates, not signature or initial lines.
+  const body = text.split('VALUES FILLED INTO THE FORM FIELDS')[0];
+  const moneyBlanks = body.match(/\$\s*_{3,}/g) || [];
+  const dateBlanks =
+    body.match(/\b(dated?|on|from|to|through|until|beginning|begins|ending|ends|commenc\w*|expir\w*)\s*:?\s*_{4,}/gi) || [];
+  result.blankCount = moneyBlanks.length + dateBlanks.length;
+  return result;
+}
+
+// True if a dollar amount appears in the text, written with or without commas/cents.
+function amountAppearsIn(text, amount) {
+  const plain = String(amount);
+  const forms = [
+    plain,
+    amount.toLocaleString('en-US'),
+    amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    amount.toFixed(2),
+  ];
+  return forms.some((f) => new RegExp(`(^|[^\\d.,])${f.replace(/[.,]/g, '\\$&')}(?![\\d])`).test(text));
+}
+
+// Monthly rent as a number, or 0 if it's missing or left blank.
+export function rentAmount(keyTerms) {
+  const t = keyTerms.find((k) => /rent/i.test(k.label) && !/pet/i.test(k.label));
+  return t ? toNumber(t.value) : 0;
 }
 
 export async function askDocument(text, clauses, question, mode) {

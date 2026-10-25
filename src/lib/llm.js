@@ -36,14 +36,22 @@ export async function chat(messages, { mode, json = true }) {
     return data.message?.content ?? '';
   }
 
-  const res = await fetch('/api/decode', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages, json }),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `Cloud request failed (${res.status})`);
-  return data.content ?? '';
+  // Free cloud tier allows ~8K tokens per minute. Long documents send several parts,
+  // so when the limit is hit we wait and retry instead of failing.
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch('/api/decode', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages, json }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 429 && attempt < 4) {
+      await new Promise((r) => setTimeout(r, 20000));
+      continue;
+    }
+    if (!res.ok) throw new Error(data.error || `Cloud request failed (${res.status})`);
+    return data.content ?? '';
+  }
 }
 
 // Ask for JSON, parse it, retry once if the model returns something broken.

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { feeTotals } from '../lib/decode.js';
+import { feeTotals, rentAmount } from '../lib/decode.js';
 import AskPanel from './AskPanel.jsx';
 
 const RISK = {
@@ -64,12 +64,28 @@ export default function Results({ result, docText, mode, onReset }) {
               {result.keyTerms.map((k) => (
                 <div key={k.label} className="rounded-xl bg-paper px-3 py-2">
                   <dt className="text-xs text-muted">{k.label}</dt>
-                  <dd className="font-semibold">{k.value}</dd>
+                  <dd className={`font-semibold ${k.value === 'Left blank' ? 'text-risk-red' : ''}`}>
+                    {k.value === 'Left blank' ? '⚠️ Left blank' : k.value}
+                  </dd>
                 </div>
               ))}
             </dl>
           )}
         </section>
+
+        {result.blankCount > 0 && (
+          <section role="alert" className="rounded-2xl border border-risk-red/30 bg-risk-red-bg p-5">
+            <h2 className="font-semibold text-risk-red">
+              ⚠️ {result.blankCount} blank {result.blankCount === 1 ? 'amount or date' : 'amounts or dates'} in this document
+            </h2>
+            <p className="mt-1 text-sm">
+              Never sign until every blank is filled in. Anything left blank can be filled in later
+              by someone else, and SafeSign can only analyze what's actually written.
+            </p>
+          </section>
+        )}
+
+        <SplitCard result={result} totals={feeTotals(result.fees)} />
 
         <div className="grid gap-4 sm:grid-cols-2">
           {/* Hidden costs */}
@@ -198,6 +214,68 @@ export default function Results({ result, docText, mode, onReset }) {
         </div>
       </aside>
     </div>
+  );
+}
+
+// Splits rent and guaranteed costs per roommate. The lease states the total;
+// how it's divided is up to the roommates, so this assumes an even split.
+function SplitCard({ result, totals }) {
+  const [people, setPeople] = useState(result.tenantCount || 1);
+  if (result.documentType !== 'lease') return null;
+
+  const rent = rentAmount(result.keyTerms);
+  const depositTerm = result.keyTerms.find((k) => /deposit/i.test(k.label));
+  const deposit = depositTerm ? Number(String(depositTerm.value).replace(/[^0-9.]/g, '')) || 0 : 0;
+  const per = (n) => money(Math.round((n / people) * 100) / 100);
+
+  const rows = [
+    rent > 0 && ['Rent', `${per(rent)} / month`],
+    totals.monthly > 0 && ['Monthly extras', `${per(totals.monthly)} / month`],
+    rent > 0 && ['Total each month', `${per(rent + totals.monthly)} / month`],
+    totals.atSigning > 0 && ['Extra fees at signing', per(totals.atSigning)],
+    deposit > 0 && ['Security deposit', per(deposit)],
+  ].filter(Boolean);
+
+  return (
+    <section className="rounded-2xl border border-line bg-card p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-semibold">Splitting with roommates?</h2>
+        <div className="flex items-center gap-2" aria-label="Number of people splitting">
+          <button
+            onClick={() => setPeople((p) => Math.max(1, p - 1))}
+            className="h-9 w-9 rounded-lg border border-line text-lg hover:bg-paper"
+            aria-label="Fewer people"
+          >−</button>
+          <span className="w-24 text-center font-semibold" aria-live="polite">
+            {people} {people === 1 ? 'person' : 'people'}
+          </span>
+          <button
+            onClick={() => setPeople((p) => Math.min(12, p + 1))}
+            className="h-9 w-9 rounded-lg border border-line text-lg hover:bg-paper"
+            aria-label="More people"
+          >+</button>
+        </div>
+      </div>
+
+      {rows.length === 0 ? (
+        <p className="mt-2 text-sm text-muted">The rent amount is left blank, so there's nothing to split yet.</p>
+      ) : (
+        <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {rows.map(([label, value]) => (
+            <div key={label} className="rounded-xl bg-paper px-3 py-2">
+              <dt className="text-xs text-muted">{label}{people > 1 ? ' (your share)' : ''}</dt>
+              <dd className="font-semibold">{value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+      {people > 1 && (
+        <p className="mt-3 text-xs text-muted">
+          Assumes an even split. The lease lists the total; check whether it makes each of you
+          responsible for the full amount (look for "jointly and severally").
+        </p>
+      )}
+    </section>
   );
 }
 

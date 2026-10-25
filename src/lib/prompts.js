@@ -9,6 +9,7 @@ Read the document and respond with ONLY a JSON object in exactly this shape:
   "title": "short name for the document, e.g. 'Apartment lease – 123 Main St'",
   "summary": "2-3 plain-English sentences: what the person is agreeing to",
   "keyTerms": [ { "label": "Monthly rent", "value": "$1,850" } ],
+  "tenantCount": 2,
   "clauses": [
     {
       "title": "short clause name, e.g. 'Late fee'",
@@ -31,7 +32,11 @@ If a clause matches any red example, it MUST be "red".
 
 Rules:
 - Return one clause object for EVERY numbered section or distinct provision, in document order. Do not skip any, including rent, utilities, repairs, and boring standard ones.
-- keyTerms: 3-6 most important facts (rent, length, deposit, start date, salary, etc.), written with "$" and commas. Use only facts in the document.
+- keyTerms: 3-6 most important facts (rent, length, deposit, start date, salary, etc.), written with "$" and commas. Use only facts in the document. If a value is a blank line (like "$_____") or missing, set value to exactly "Left blank".
+- If a section titled "VALUES FILLED INTO THE FORM FIELDS" appears, those are the real filled-in values: use them for keyTerms and fees.
+- tenantCount: the number of tenants named or with signature lines, if clearly stated; otherwise null.
+- If tenants are "jointly and severally" liable, include that as its own clause and rate it "red": explain that each roommate can be made to pay the FULL rent if others don't pay.
+- In the summary, never repeat blank lines like "$_____"; say the amount is left blank.
 - fees: every amount of money the person may have to pay besides the main rent or price itself (do NOT include the base rent or a refundable security deposit). amount is a number with no "$". "when" must be:
   - "at_signing": everyone pays it at or before move-in (e.g. non-refundable admin or application fees)
   - "monthly": everyone pays it every month on top of rent (e.g. a required utility charge, or a fee charged on every rent payment when there is no free way to pay)

@@ -8,7 +8,11 @@ export default function Processing({ mode, progress }) {
           ? '🔒 Processing on your device with Llama. Nothing is being uploaded.'
           : '☁️ Sending to open-weight gpt-oss in the cloud for this demo.'}
       </p>
-      <p className="mt-6 text-xs text-muted">Long documents can take up to a minute on a laptop.</p>
+      <p className="mt-6 text-xs text-muted">
+        {mode === 'local'
+          ? 'Long documents can take up to a minute on a laptop.'
+          : 'Long documents can take a few minutes on the free cloud demo.'}
+      </p>
     </div>
   );
 }
