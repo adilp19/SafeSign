@@ -26,11 +26,20 @@ export default function Results({ result, docText, mode, onReset }) {
     return c;
   }, [result]);
 
+  const [showStandard, setShowStandard] = useState(false);
   const totals = feeTotals(result.fees);
-  const shown = filter === 'all' ? result.clauses : result.clauses.filter((c) => c.risk === filter);
+  // Standard (green) clauses are collapsed behind a button so risky ones stand out.
+  const shown =
+    filter !== 'all'
+      ? result.clauses.filter((c) => c.risk === filter)
+      : showStandard
+      ? result.clauses
+      : result.clauses.filter((c) => c.risk !== 'green');
+  const hiddenStandard = filter === 'all' && !showStandard ? counts.green : 0;
 
   function jumpTo(id) {
     setFilter('all');
+    setShowStandard(true);
     requestAnimationFrame(() => {
       const el = document.getElementById(id);
       if (!el) return;
@@ -43,9 +52,11 @@ export default function Results({ result, docText, mode, onReset }) {
   }
 
   return (
+    // Order on phones/narrow screens: overview → ask/questions → clauses.
+    // On wide screens the ask/questions panel sits in a sticky right column.
     <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
-      {/* Left: summary + clauses */}
-      <div className="min-w-0 space-y-6">
+      {/* Overview: summary, warnings, split, costs, risk */}
+      <div className="min-w-0 space-y-6 lg:col-start-1 lg:row-start-1">
         <section className="rounded-2xl border border-line bg-card p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -96,6 +107,12 @@ export default function Results({ result, docText, mode, onReset }) {
             ) : (
               <>
                 <div className="mt-2 space-y-1">
+                  {totals.atSigning + totals.monthly + totals.moveOut === 0 && (
+                    <p className="text-sm">
+                      <span className="font-semibold text-risk-green">✓ No guaranteed extra fees.</span>{' '}
+                      <span className="text-muted">These only apply in certain situations:</span>
+                    </p>
+                  )}
                   {totals.atSigning > 0 && (
                     <p><span className="font-display text-3xl font-bold">{money(totals.atSigning)}</span> <span className="text-sm text-muted">extra at signing</span></p>
                   )}
@@ -152,6 +169,36 @@ export default function Results({ result, docText, mode, onReset }) {
           </section>
         </div>
 
+      </div>
+
+      {/* Ask + Questions */}
+      <aside className="lg:sticky lg:top-6 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
+        <div className="rounded-2xl border border-line bg-card">
+          <div className="grid grid-cols-2 border-b border-line" role="tablist">
+            {[
+              { id: 'ask', label: 'Ask the document' },
+              { id: 'questions', label: 'Before you sign' },
+            ].map((t) => (
+              <button
+                key={t.id}
+                role="tab"
+                aria-selected={tab === t.id}
+                onClick={() => setTab(t.id)}
+                className={`px-4 py-3 text-sm font-semibold ${tab === t.id ? 'border-b-2 border-accent text-accent' : 'text-muted'}`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          {tab === 'ask' ? (
+            <AskPanel docText={docText} clauses={result.clauses} mode={mode} onCite={jumpTo} />
+          ) : (
+            <QuestionsPanel questions={result.questions} />
+          )}
+        </div>
+      </aside>
+
+      <div className="min-w-0 lg:col-start-1 lg:row-start-2">
         {/* Clause list */}
         <section>
           <div className="mb-3 flex items-center justify-between">
@@ -184,35 +231,16 @@ export default function Results({ result, docText, mode, onReset }) {
               </details>
             ))}
           </div>
+          {filter === 'all' && hiddenStandard > 0 && (
+            <button
+              onClick={() => setShowStandard(true)}
+              className="mt-3 w-full rounded-xl border border-dashed border-line py-3 text-sm font-semibold text-risk-green hover:bg-card"
+            >
+              Show {hiddenStandard} standard {hiddenStandard === 1 ? 'clause' : 'clauses'}
+            </button>
+          )}
         </section>
       </div>
-
-      {/* Right: Ask + Questions */}
-      <aside className="lg:sticky lg:top-6 lg:self-start">
-        <div className="rounded-2xl border border-line bg-card">
-          <div className="grid grid-cols-2 border-b border-line" role="tablist">
-            {[
-              { id: 'ask', label: 'Ask the document' },
-              { id: 'questions', label: 'Before you sign' },
-            ].map((t) => (
-              <button
-                key={t.id}
-                role="tab"
-                aria-selected={tab === t.id}
-                onClick={() => setTab(t.id)}
-                className={`px-4 py-3 text-sm font-semibold ${tab === t.id ? 'border-b-2 border-accent text-accent' : 'text-muted'}`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-          {tab === 'ask' ? (
-            <AskPanel docText={docText} clauses={result.clauses} mode={mode} onCite={jumpTo} />
-          ) : (
-            <QuestionsPanel questions={result.questions} />
-          )}
-        </div>
-      </aside>
     </div>
   );
 }

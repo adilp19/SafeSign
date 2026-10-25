@@ -43,6 +43,18 @@ export default function UploadScreen({ mode, setMode, ollama, onRecheck, onDecod
           Drop in a lease, job offer, or terms of service. Open-source Llama flags the risky clauses,
           adds up hidden fees, and tells you what to ask, without your document leaving your laptop.
         </p>
+        <ul className="mx-auto mt-6 grid max-w-2xl gap-3 text-left sm:grid-cols-3">
+          {[
+            { icon: '🚩', title: 'Red flags', text: 'Every clause rated, risky ones first' },
+            { icon: '💸', title: 'Hidden costs', text: 'What you really pay, upfront and monthly' },
+            { icon: '👥', title: 'Roommate split', text: 'Your share, and who owes what' },
+          ].map((f) => (
+            <li key={f.title} className="rounded-xl border border-line bg-card px-4 py-3">
+              <p className="font-semibold">{f.icon} {f.title}</p>
+              <p className="text-sm text-muted">{f.text}</p>
+            </li>
+          ))}
+        </ul>
       </section>
 
       {/* Mode toggle */}
