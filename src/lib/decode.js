@@ -193,13 +193,24 @@ export async function decodeDocument(text, mode, onProgress = () => {}) {
     (f) => /terminat|break/i.test(`${f.name} ${f.note}`) || amountAppearsIn(text, f.amount)
   );
 
-  // Count only blank amounts and dates, not signature or initial lines.
-  const body = text.split('VALUES FILLED INTO THE FORM FIELDS')[0];
-  const moneyBlanks = body.match(/\$\s*_{3,}/g) || [];
-  const dateBlanks =
-    body.match(/\b(dated?|on|from|to|through|until|beginning|begins|ending|ends|commenc\w*|expir\w*)\s*:?\s*_{4,}/gi) || [];
-  result.blankCount = moneyBlanks.length + dateBlanks.length;
+  result.blankCount = countBlanks(text);
   return result;
+}
+
+// Count blank amounts and dates (not signature or initial lines). A "[filled in: ...]"
+// value on the same line fills one of that line's blanks.
+const MONEY_BLANK = /\$\s*_{3,}/g;
+const DATE_BLANK =
+  /\b(dated?|on|from|to|through|until|beginning|begins|ending|ends|commenc\w*|expir\w*)\s*:?\s*_{4,}/gi;
+
+function countBlanks(text) {
+  let total = 0;
+  for (const line of text.split('\n')) {
+    const blanks = (line.match(MONEY_BLANK) || []).length + (line.match(DATE_BLANK) || []).length;
+    const filled = (line.match(/\[filled in:/g) || []).length;
+    total += Math.max(0, blanks - filled);
+  }
+  return total;
 }
 
 // True if a dollar amount appears in the text, written with or without commas/cents.

@@ -33,7 +33,7 @@ If a clause matches any red example, it MUST be "red".
 Rules:
 - Return one clause object for EVERY numbered section or distinct provision, in document order. Do not skip any, including rent, utilities, repairs, and boring standard ones.
 - keyTerms: 3-6 most important facts (rent, length, deposit, start date, salary, etc.), written with "$" and commas. Use only facts in the document. If a value is a blank line (like "$_____") or missing, set value to exactly "Left blank".
-- If a section titled "VALUES FILLED INTO THE FORM FIELDS" appears, those are the real filled-in values: use them for keyTerms and fees.
+- Text like "[filled in: 8200]" is a value someone typed into a blank on the SAME line. Treat it as the real value for that blank (e.g. "monthly rent of $______ due on the 1st. [filled in: 8200]" means rent is $8,200), and that blank is NOT left blank.
 - tenantCount: the number of tenants named or with signature lines, if clearly stated; otherwise null.
 - If tenants are "jointly and severally" liable, include that as its own clause and rate it "red": explain that each roommate can be made to pay the FULL rent if others don't pay.
 - In the summary, never repeat blank lines like "$_____"; say the amount is left blank.
