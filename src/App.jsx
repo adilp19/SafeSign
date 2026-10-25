@@ -81,7 +81,7 @@ export default function App() {
       </main>
 
       <footer className="mx-auto max-w-6xl px-4 pb-8 text-center text-xs text-muted">
-        Not legal advice. SafeSign helps you know what to ask. Powered by open-weight Llama · MIT licensed.
+        Not legal advice. SafeSign helps you know what to ask. Private mode: Llama on your device · Cloud demo: open-weight gpt-oss · MIT licensed.
       </footer>
     </div>
   );

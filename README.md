@@ -15,7 +15,7 @@ It runs on **open-weight Llama** through [Ollama](https://ollama.com) on your ow
 - Hidden-cost total (upfront and monthly)
 - "Ask the document" chat with clickable clause citations
 - Questions to ask before signing, with copy button
-- **Private mode** (local Llama) and **Cloud demo** mode (Llama on Groq) for people without Ollama
+- **Private mode** (local Llama) and **Cloud demo** mode (open-weight gpt-oss-120b on Groq) for people without Ollama
 
 ## Why open-source AI
 Leases and offer letters contain your address, income, and personal details. A cloud AI means sending all of that to someone else's server. Running an open-weight model locally makes privacy the default: the website has no backend that ever sees your document.
