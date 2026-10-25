@@ -1,6 +1,6 @@
 // One function for both modes:
 //   local  → Ollama on the user's own computer (private, nothing leaves the device)
-//   cloud  → our Vercel function /api/decode, which calls Llama on Groq (key stays server-side)
+//   cloud  → our Vercel function /api/decode, which calls open-weight gpt-oss on Groq (key stays server-side)
 
 export const OLLAMA_URL = 'http://localhost:11434';
 export const OLLAMA_MODEL = import.meta.env.VITE_OLLAMA_MODEL || 'llama3.1:8b';
