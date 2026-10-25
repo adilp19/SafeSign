@@ -187,11 +187,18 @@ export async function decodeDocument(text, mode, onProgress = () => {}) {
   const result = merge(parts);
   result.tenantCount = parts.map((p) => p.tenantCount).find(Boolean) || null;
 
-  // Drop any fee whose amount isn't actually written in the document (model hallucinations).
-  // Early-termination fees are exempt because they're computed (N months x rent).
-  result.fees = result.fees.filter(
-    (f) => /terminat|break/i.test(`${f.name} ${f.note}`) || amountAppearsIn(text, f.amount)
+  // Early-termination fees written as "N months' rent": do the math in code, not the model.
+  const rent = rentAmount(result.keyTerms);
+  const months = terminationMonths(text);
+  result.fees = result.fees.map((f) =>
+    /terminat|break/i.test(`${f.name} ${f.note}`) && months && rent
+      ? { ...f, amount: months * rent, computed: true }
+      : f
   );
+
+  // Drop any fee whose amount isn't actually written in the document (model hallucinations),
+  // unless we computed it ourselves above.
+  result.fees = result.fees.filter((f) => f.computed || amountAppearsIn(text, f.amount));
 
   result.blankCount = countBlanks(text);
   return result;
@@ -211,6 +218,16 @@ function countBlanks(text) {
     total += Math.max(0, blanks - filled);
   }
   return total;
+}
+
+// Finds "three (3) months' rent" / "2 months rent" near a termination clause.
+const NUM_WORDS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, twelve: 12 };
+function terminationMonths(text) {
+  const m = text.match(
+    /(?:terminat|break)[^.]{0,200}?\b(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|twelve)\b\s*(?:\((\d{1,2})\))?\s*(?:full\s+)?months?['’]?\s*(?:of\s+)?rent/i
+  );
+  if (!m) return 0;
+  return Number(m[2]) || Number(m[1]) || NUM_WORDS[m[1].toLowerCase()] || 0;
 }
 
 // True if a dollar amount appears in the text, written with or without commas/cents.
