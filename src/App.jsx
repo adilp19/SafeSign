@@ -49,12 +49,12 @@ export default function App() {
       <header className="border-b border-line">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           <button onClick={reset} className="flex items-center gap-2 text-left">
-            <img src="/favicon.svg" alt="" className="h-7 w-7" />
+            <img src="/favicon.svg" alt="" className="h-8 w-8" />
             <span className="font-display text-xl font-bold">SafeSign</span>
           </button>
           <span
             className={`rounded-full px-3 py-1 text-xs font-semibold ${
-              mode === 'local' ? 'bg-risk-green-bg text-risk-green' : 'bg-risk-yellow-bg text-risk-yellow'
+              mode === 'local' ? 'border border-line bg-card text-ink' : 'border border-risk-yellow/40 bg-risk-yellow-bg text-risk-yellow'
             }`}
           >
             {mode === 'local' ? '🔒 Private · runs on your device' : '☁️ Cloud demo'}

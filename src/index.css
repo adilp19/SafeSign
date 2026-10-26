@@ -1,20 +1,22 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
 
-  --color-paper: #f6f1e7;
-  --color-card: #fffdf8;
-  --color-ink: #1f2a24;
+  --color-paper: #f7f5f0;
+  --color-card: #ffffff;
+  --color-tile: #f1efe9;
+  --color-ink: #1c2422;
   --color-muted: #6b6f68;
-  --color-line: #e3dccd;
-  --color-accent: #1f5c4a;
+  --color-line: #e6e2d9;
+  --color-accent: #2b6669;
+  --color-accent-soft: #e0f1f2;
 
   --color-risk-red: #c0392b;
   --color-risk-red-bg: #fbe9e6;
   --color-risk-yellow: #b7791f;
-  --color-risk-yellow-bg: #fdf3dc;
+  --color-risk-yellow-bg: #fdf1d6;
   --color-risk-green: #2f7d4f;
   --color-risk-green-bg: #e6f3ea;
 }
@@ -32,3 +34,5 @@ body {
   0% { box-shadow: 0 0 0 4px var(--color-accent); }
   100% { box-shadow: 0 0 0 0 transparent; }
 }
+
+.card { background: var(--color-card); border: 1px solid var(--color-line); border-radius: 1.25rem; box-shadow: 0 1px 2px rgb(28 36 34 / 0.04), 0 4px 16px rgb(28 36 34 / 0.04); }

@@ -49,7 +49,7 @@ export default function UploadScreen({ mode, setMode, ollama, onRecheck, onDecod
             { icon: '💸', title: 'Hidden costs', text: 'What you really pay, upfront and monthly' },
             { icon: '👥', title: 'Roommate split', text: 'Your share, and who owes what' },
           ].map((f) => (
-            <li key={f.title} className="rounded-xl border border-line bg-card px-4 py-3">
+            <li key={f.title} className="card px-4 py-3">
               <p className="font-semibold">{f.icon} {f.title}</p>
               <p className="text-sm text-muted">{f.text}</p>
             </li>
@@ -58,7 +58,7 @@ export default function UploadScreen({ mode, setMode, ollama, onRecheck, onDecod
       </section>
 
       {/* Mode toggle */}
-      <div className="mb-4 grid grid-cols-2 gap-2 rounded-xl border border-line bg-card p-1">
+      <div className="card mb-4 grid grid-cols-2 gap-2 p-1.5">
         {[
           { id: 'local', label: '🔒 Private mode', sub: 'Llama on your device' },
           { id: 'cloud', label: '☁️ Cloud demo', sub: 'Document is sent to the cloud' },
@@ -67,12 +67,12 @@ export default function UploadScreen({ mode, setMode, ollama, onRecheck, onDecod
             key={m.id}
             onClick={() => setMode(m.id)}
             className={`rounded-lg px-4 py-3 text-left transition ${
-              mode === m.id ? 'bg-ink text-paper' : 'hover:bg-paper'
+              mode === m.id ? 'bg-accent text-white' : 'hover:bg-tile'
             }`}
             aria-pressed={mode === m.id}
           >
             <div className="font-semibold">{m.label}</div>
-            <div className={`text-xs ${mode === m.id ? 'text-paper/70' : 'text-muted'}`}>{m.sub}</div>
+            <div className={`text-xs ${mode === m.id ? 'text-white/75' : 'text-muted'}`}>{m.sub}</div>
           </button>
         ))}
       </div>
@@ -97,7 +97,7 @@ export default function UploadScreen({ mode, setMode, ollama, onRecheck, onDecod
           if (!blocked) handleFile(e.dataTransfer.files[0]);
         }}
         className={`rounded-2xl border-2 border-dashed p-10 text-center transition ${
-          dragging ? 'border-accent bg-risk-green-bg' : 'border-line bg-card'
+          dragging ? 'border-accent bg-accent-soft' : 'border-line bg-card'
         } ${blocked ? 'opacity-50' : ''}`}
       >
         <div className="text-4xl">📄</div>
@@ -108,7 +108,7 @@ export default function UploadScreen({ mode, setMode, ollama, onRecheck, onDecod
         <button
           disabled={blocked || reading}
           onClick={() => inputRef.current?.click()}
-          className="mt-5 rounded-lg bg-accent px-5 py-2.5 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-5 rounded-full bg-accent px-6 py-2.5 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           Choose a file
         </button>
@@ -122,19 +122,19 @@ export default function UploadScreen({ mode, setMode, ollama, onRecheck, onDecod
       </div>
 
       {/* Paste option */}
-      <details className="mt-4 rounded-2xl border border-line bg-card p-4">
+      <details className="mt-4 card p-4">
         <summary className="cursor-pointer font-semibold">Or paste the text</summary>
         <textarea
           value={pasted}
           onChange={(e) => setPasted(e.target.value)}
           rows={8}
           placeholder="Paste your lease, offer letter, or terms of service…"
-          className="mt-3 w-full rounded-lg border border-line bg-paper p-3 text-sm outline-none focus:border-accent"
+          className="mt-3 w-full rounded-xl border border-line bg-paper p-3 text-sm outline-none focus:border-accent"
         />
         <button
           disabled={blocked}
           onClick={handlePaste}
-          className="mt-2 rounded-lg bg-ink px-4 py-2 font-semibold text-paper disabled:opacity-50"
+          className="mt-2 rounded-full bg-accent px-5 py-2 font-semibold text-white disabled:opacity-50"
         >
           Decode text
         </button>

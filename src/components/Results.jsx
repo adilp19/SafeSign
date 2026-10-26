@@ -9,11 +9,11 @@ const RISK = {
 };
 
 const money = (n) => `$${n.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
-const WHEN = {
-  at_signing: 'at signing',
-  monthly: '/ month',
-  move_out: 'at move-out',
-  conditional: 'if applicable',
+const TAG = {
+  at_signing: 'At signing',
+  monthly: 'Monthly',
+  move_out: 'Move-out',
+  conditional: 'If applicable',
 };
 
 export default function Results({ result, docText, mode, onReset }) {
@@ -57,88 +57,96 @@ export default function Results({ result, docText, mode, onReset }) {
     <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
       {/* Overview: summary, warnings, split, costs, risk */}
       <div className="min-w-0 space-y-6 lg:col-start-1 lg:row-start-1">
-        <section className="rounded-2xl border border-line bg-card p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                {result.documentType.replace('_', ' ')}
-              </p>
-              <h1 className="font-display text-2xl font-bold">{result.title}</h1>
-            </div>
-            <button onClick={onReset} className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-sm hover:bg-paper">
-              New document
-            </button>
-          </div>
-          <p className="mt-3 text-lg leading-relaxed">{result.summary}</p>
+        <section className="card p-6">
+          <p className="text-xs font-bold uppercase tracking-widest text-accent">
+            {result.documentType.replace('_', ' ')}
+          </p>
+          <h1 className="mt-1 font-display text-2xl font-bold leading-tight sm:text-3xl">{result.title}</h1>
+          <button onClick={onReset} className="mt-3 rounded-full border border-line px-4 py-1.5 text-sm font-medium hover:bg-tile">
+            New document
+          </button>
+          <p className="mt-4 leading-relaxed text-ink/80">{result.summary}</p>
           {result.keyTerms.length > 0 && (
-            <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {result.keyTerms.map((k) => (
-                <div key={k.label} className="rounded-xl bg-paper px-3 py-2">
-                  <dt className="text-xs text-muted">{k.label}</dt>
-                  <dd className={`font-semibold ${k.value === 'Left blank' ? 'text-risk-red' : ''}`}>
-                    {k.value === 'Left blank' ? '⚠️ Left blank' : k.value}
-                  </dd>
-                </div>
-              ))}
+            <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {result.keyTerms.map((k) => {
+                const blank = k.value === 'Left blank';
+                return (
+                  <div
+                    key={k.label}
+                    className={`rounded-xl px-3 py-3 ${blank ? 'border border-risk-yellow/40 bg-risk-yellow-bg' : 'bg-tile'}`}
+                  >
+                    <dt className="text-xs text-muted">{k.label}</dt>
+                    <dd className={`mt-1 text-sm font-semibold ${blank ? 'text-risk-yellow' : ''}`}>
+                      {blank ? '⚠️ Left blank' : k.value}
+                    </dd>
+                  </div>
+                );
+              })}
             </dl>
           )}
         </section>
 
         {result.blankCount > 0 && (
-          <section role="alert" className="rounded-2xl border border-risk-red/30 bg-risk-red-bg p-5">
-            <h2 className="font-semibold text-risk-red">
-              ⚠️ {result.blankCount} blank {result.blankCount === 1 ? 'amount or date' : 'amounts or dates'} in this document
-            </h2>
-            <p className="mt-1 text-sm">
-              Never sign until every blank is filled in. Anything left blank can be filled in later
-              by someone else, and SafeSign can only analyze what's actually written.
-            </p>
-          </section>
+          <p role="alert" className="rounded-xl border border-risk-red/30 bg-risk-red-bg px-4 py-3 text-sm font-semibold text-risk-red">
+            ⚠️ {result.blankCount} blank {result.blankCount === 1 ? 'amount or date' : 'amounts or dates'} in this document —
+            never sign until every blank is filled in.
+          </p>
         )}
 
         <SplitCard result={result} totals={feeTotals(result.fees)} />
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-6">
           {/* Hidden costs */}
-          <section className="rounded-2xl border border-line bg-card p-5">
-            <h2 className="font-semibold">Hidden costs</h2>
+          <section className="card p-5 sm:p-6">
+            <h2 className="font-display text-lg font-bold">💸 Hidden costs</h2>
             {result.fees.length === 0 ? (
               <p className="mt-2 text-sm text-muted">No extra fees found.</p>
             ) : (
               <>
-                <div className="mt-2 space-y-1">
-                  {totals.atSigning + totals.monthly + totals.moveOut === 0 && (
-                    <p className="text-sm">
-                      <span className="font-semibold text-risk-green">✓ No guaranteed extra fees.</span>{' '}
-                      <span className="text-muted">These only apply in certain situations:</span>
-                    </p>
-                  )}
-                  {totals.atSigning > 0 && (
-                    <p><span className="font-display text-3xl font-bold">{money(totals.atSigning)}</span> <span className="text-sm text-muted">extra at signing</span></p>
-                  )}
-                  {totals.monthly > 0 && (
-                    <p><span className="font-display text-3xl font-bold">+{money(totals.monthly)}</span> <span className="text-sm text-muted">every month on top of rent</span></p>
-                  )}
-                  {totals.moveOut > 0 && (
-                    <p><span className="font-display text-xl font-bold">{money(totals.moveOut)}</span> <span className="text-sm text-muted">kept at move-out no matter what</span></p>
-                  )}
-                </div>
-                <ul className="mt-3 space-y-1 text-sm">
-                  {result.fees.filter((f) => f.when !== 'conditional').map((f, i) => (
-                    <li key={i} className="flex justify-between gap-3">
-                      <span className="text-muted">{f.name}</span>
-                      <span className="whitespace-nowrap font-medium">{money(f.amount)} {WHEN[f.when]}</span>
-                    </li>
-                  ))}
-                </ul>
+                {totals.atSigning + totals.monthly + totals.moveOut === 0 ? (
+                  <p className="mt-2 text-sm">
+                    <span className="font-semibold text-risk-green">✓ No guaranteed extra fees.</span>{' '}
+                    <span className="text-muted">These only apply in certain situations:</span>
+                  </p>
+                ) : (
+                  <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                    {[
+                      totals.atSigning > 0 && [money(totals.atSigning), 'extra at signing'],
+                      totals.monthly > 0 && [`+${money(totals.monthly)}`, 'every month on top of rent'],
+                      totals.moveOut > 0 && [money(totals.moveOut), 'kept at move-out no matter what'],
+                    ]
+                      .filter(Boolean)
+                      .map(([n, label]) => (
+                        <div key={label} className="border-l-4 border-accent pl-3">
+                          <p className="font-display text-2xl font-bold">{n}</p>
+                          <p className="text-sm text-muted">{label}</p>
+                        </div>
+                      ))}
+                  </div>
+                )}
+
+                {result.fees.some((f) => f.when !== 'conditional') && (
+                  <ul className="mt-5 divide-y divide-line overflow-hidden rounded-xl border border-line text-sm">
+                    {result.fees.filter((f) => f.when !== 'conditional').map((f, i) => (
+                      <li key={i} className="flex items-center justify-between gap-3 px-4 py-3">
+                        <span className="flex flex-wrap items-center gap-2">
+                          {f.name}
+                          <span className="rounded-full bg-tile px-2 py-0.5 text-xs text-muted">{TAG[f.when]}</span>
+                        </span>
+                        <span className="whitespace-nowrap font-semibold">{money(f.amount)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
                 {result.fees.some((f) => f.when === 'conditional') && (
                   <>
-                    <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-muted">Only if it applies to you</p>
-                    <ul className="mt-1 space-y-1 text-sm">
+                    <p className="mt-5 text-xs font-bold uppercase tracking-widest text-muted">Only if it applies to you</p>
+                    <ul className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
                       {result.fees.filter((f) => f.when === 'conditional').map((f, i) => (
-                        <li key={i} className="flex justify-between gap-3">
-                          <span className="text-muted">{f.name}</span>
-                          <span className="whitespace-nowrap font-medium">{money(f.amount)}</span>
+                        <li key={i} className="rounded-xl bg-tile px-3 py-3">
+                          <p className="text-xs text-muted">{f.name}</p>
+                          <p className="mt-1 font-semibold">{money(f.amount)}</p>
                         </li>
                       ))}
                     </ul>
@@ -149,20 +157,21 @@ export default function Results({ result, docText, mode, onReset }) {
           </section>
 
           {/* Risk overview */}
-          <section className="rounded-2xl border border-line bg-card p-5">
-            <h2 className="font-semibold">Risk overview</h2>
+          <section className="card p-5">
+            <h2 className="font-display text-lg font-bold">Risk overview</h2>
+            <p className="text-xs text-muted">Tap a row to filter the clauses.</p>
             <div className="mt-3 space-y-2">
               {['red', 'yellow', 'green'].map((r) => (
                 <button
                   key={r}
                   onClick={() => setFilter(filter === r ? 'all' : r)}
-                  className={`flex w-full items-center justify-between rounded-lg px-3 py-2 ${RISK[r].bg} ${filter === r ? 'ring-2 ring-ink' : ''}`}
+                  className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 transition hover:bg-tile ${filter === r ? `${RISK[r].bg} border-transparent ring-2 ring-accent` : 'border-line'}`}
                 >
-                  <span className={`flex items-center gap-2 font-medium ${RISK[r].text}`}>
+                  <span className="flex items-center gap-2 font-medium">
                     <span className={`h-2.5 w-2.5 rounded-full ${RISK[r].dot}`} />
                     {RISK[r].label}
                   </span>
-                  <span className="font-display text-xl font-bold">{counts[r]}</span>
+                  <span className={`font-display text-xl font-bold ${RISK[r].text}`}>{counts[r]}</span>
                 </button>
               ))}
             </div>
@@ -173,7 +182,7 @@ export default function Results({ result, docText, mode, onReset }) {
 
       {/* Ask + Questions */}
       <aside className="lg:sticky lg:top-6 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
-        <div className="rounded-2xl border border-line bg-card">
+        <div className="card">
           <div className="grid grid-cols-2 border-b border-line" role="tablist">
             {[
               { id: 'ask', label: 'Ask the document' },
@@ -209,7 +218,7 @@ export default function Results({ result, docText, mode, onReset }) {
           </div>
           <div className="space-y-3">
             {shown.map((c) => (
-              <details key={c.id} id={c.id} className="group rounded-xl border border-line bg-card" open={c.risk === 'red'}>
+              <details key={c.id} id={c.id} className="card group" open={c.risk === 'red'}>
                 <summary className="flex cursor-pointer list-none items-start gap-3 p-4">
                   <span className={`mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${RISK[c.risk].bg} ${RISK[c.risk].text}`}>
                     {RISK[c.risk].label}
@@ -224,7 +233,7 @@ export default function Results({ result, docText, mode, onReset }) {
                   <span className="text-muted transition group-open:rotate-180">▾</span>
                 </summary>
                 {c.quote && (
-                  <blockquote className="mx-4 mb-4 border-l-4 border-line pl-3 text-sm italic text-muted">
+                  <blockquote className="mx-4 mb-4 rounded-lg border-l-4 border-accent bg-tile px-3 py-2 text-sm italic text-muted">
                     “{c.quote}”
                   </blockquote>
                 )}
@@ -268,21 +277,21 @@ function SplitCard({ result, totals }) {
   ].filter(Boolean);
 
   return (
-    <section className="rounded-2xl border border-line bg-card p-5">
+    <section className="card p-5 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-semibold">Splitting with roommates?</h2>
-        <div className="flex items-center gap-2" aria-label="Number of people splitting">
+        <h2 className="font-display text-lg font-bold">👥 Splitting with roommates?</h2>
+        <div className="flex items-center gap-1 rounded-full border border-line p-1" aria-label="Number of people splitting">
           <button
             onClick={() => setPeople((p) => Math.max(1, p - 1))}
-            className="h-9 w-9 rounded-lg border border-line text-lg hover:bg-paper"
+            className="h-8 w-8 rounded-full text-lg hover:bg-tile"
             aria-label="Fewer people"
           >−</button>
-          <span className="w-24 text-center font-semibold" aria-live="polite">
+          <span className="w-20 text-center text-sm font-semibold" aria-live="polite">
             {people} {people === 1 ? 'person' : 'people'}
           </span>
           <button
             onClick={() => setPeople((p) => Math.min(12, p + 1))}
-            className="h-9 w-9 rounded-lg border border-line text-lg hover:bg-paper"
+            className="h-8 w-8 rounded-full text-lg hover:bg-tile"
             aria-label="More people"
           >+</button>
         </div>
@@ -313,11 +322,11 @@ function SplitCard({ result, totals }) {
       {rows.length === 0 ? (
         <p className="mt-2 text-sm text-muted">Enter the rent above to see each person's share.</p>
       ) : (
-        <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {rows.map(([label, value]) => (
-            <div key={label} className="rounded-xl bg-paper px-3 py-2">
+            <div key={label} className="rounded-xl bg-accent-soft px-3 py-3">
               <dt className="text-xs text-muted">{label}{people > 1 ? ' (your share)' : ''}</dt>
-              <dd className="font-semibold">{value}</dd>
+              <dd className="mt-1 font-display text-xl font-bold">{value}</dd>
             </div>
           ))}
         </dl>
@@ -348,7 +357,7 @@ function QuestionsPanel({ questions }) {
         {questions.map((q, i) => <li key={i}>{q}</li>)}
       </ol>
       {questions.length > 0 && (
-        <button onClick={copy} className="mt-4 w-full rounded-lg bg-ink py-2 text-sm font-semibold text-paper">
+        <button onClick={copy} className="mt-4 w-full rounded-full bg-accent py-2.5 text-sm font-semibold text-white">
           {copied ? 'Copied ✓' : 'Copy questions'}
         </button>
       )}
